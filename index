@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>File Share</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>File Share</h1>
+
+    <section>
+      <h2>Upload File</h2>
+      <input type="file" id="fileInput"><br>
+      <input type="password" id="uploadPassword" placeholder="Optional password"><br>
+      <button onclick="uploadFile()">Upload</button>
+      <p id="uploadStatus"></p>
+    </section>
+
+    <section>
+      <h2>Download File</h2>
+      <input type="text" id="docId" placeholder="Enter File ID"><br>
+      <input type="password" id="downloadPassword" placeholder="Password if required"><br>
+      <button onclick="getFile()">Get Link</button>
+      <p id="downloadLink"></p>
+    </section>
+
+    <section>
+      <h2>Owner Actions</h2>
+      <input type="text" id="ownerToken" placeholder="Owner Token"><br>
+      <button onclick="deleteFile()">Delete File</button>
+      <input type="password" id="newPassword" placeholder="Set new password"><br>
+      <button onclick="setNewPassword()">Update Password</button>
+      <p id="ownerStatus"></p>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
