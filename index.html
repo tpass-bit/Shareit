@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
- <meta charset="UTF-8">
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>File Share</title>
+  <title>FileShare | Secure File Sharing</title>
   <link rel="stylesheet" href="style.css">
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -12,38 +12,91 @@
 </head>
 <body>
   <div class="container">
-    <h1>File Share</h1>
-<input type="file" id="fileInput">
-<input type="password" id="uploadPassword" placeholder="Optional password">
-<button onclick="uploadFile()">Upload</button>
-<br>
-<progress id="uploadProgress" max="100" value="0" style="width:250px;"></progress>
-<p id="uploadStatus"></p>
-   
-    <section>
-      <h2>Upload File</h2>
-      <input type="file" id="fileInput"><br>
-      <input type="password" id="uploadPassword" placeholder="Optional password"><br>
-      <button onclick="uploadFile()">Upload</button>
-      <p id="uploadStatus"></p>
-    </section>
+    <header>
+      <h1><i class="icon-cloud-upload"></i> FileShare</h1>
+      <p>Secure and simple file sharing</p>
+    </header>
 
-    <section>
-      <h2>Download File</h2>
-      <input type="text" id="docId" placeholder="Enter File ID"><br>
-      <input type="password" id="downloadPassword" placeholder="Password if required"><br>
-      <button onclick="getFile()">Get Link</button>
-      <p id="downloadLink"></p>
-    </section>
+    <main>
+      <div class="card">
+        <div class="card-header">
+          <i class="icon-upload"></i>
+          <h2>Upload File</h2>
+        </div>
+        <div class="card-body">
+          <div class="file-input-container">
+            <input type="file" id="fileInput" class="file-input">
+            <label for="fileInput" class="file-input-label">
+              <i class="icon-folder-open"></i>
+              <span>Choose a file</span>
+            </label>
+          </div>
+          <div class="form-group">
+            <label for="uploadPassword">Password (optional)</label>
+            <input type="password" id="uploadPassword" placeholder="Enter password for protection">
+          </div>
+          <button class="btn btn-primary" onclick="uploadFile()">
+            <i class="icon-cloud-upload"></i> Upload File
+          </button>
+          <div class="progress-container">
+            <progress id="uploadProgress" max="100" value="0"></progress>
+            <span id="progress-text">0%</span>
+          </div>
+          <p id="uploadStatus" class="status-message"></p>
+        </div>
+      </div>
 
-    <section>
-      <h2>Owner Actions</h2>
-      <input type="text" id="ownerToken" placeholder="Owner Token"><br>
-      <button onclick="deleteFile()">Delete File</button>
-      <input type="password" id="newPassword" placeholder="Set new password"><br>
-      <button onclick="setNewPassword()">Update Password</button>
-      <p id="ownerStatus"></p>
-    </section>
+      <div class="card">
+        <div class="card-header">
+          <i class="icon-download"></i>
+          <h2>Download File</h2>
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <label for="docId">File ID</label>
+            <input type="text" id="docId" placeholder="Enter File ID">
+          </div>
+          <div class="form-group">
+            <label for="downloadPassword">Password (if required)</label>
+            <input type="password" id="downloadPassword" placeholder="Enter password">
+          </div>
+          <button class="btn btn-secondary" onclick="getFile()">
+            <i class="icon-download"></i> Get Download Link
+          </button>
+          <p id="downloadLink" class="status-message"></p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <i class="icon-settings"></i>
+          <h2>File Management</h2>
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <label for="ownerToken">Owner Token</label>
+            <input type="text" id="ownerToken" placeholder="Enter your owner token">
+          </div>
+          <div class="action-buttons">
+            <button class="btn btn-danger" onclick="deleteFile()">
+              <i class="icon-trash"></i> Delete File
+            </button>
+          </div>
+          <div class="form-group">
+            <label for="newPassword">Set New Password</label>
+            <input type="password" id="newPassword" placeholder="Enter new password">
+          </div>
+          <button class="btn btn-warning" onclick="setNewPassword()">
+            <i class="icon-lock"></i> Update Password
+          </button>
+          <p id="ownerStatus" class="status-message"></p>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <p>© 2023 FileShare. All rights reserved.</p>
+    </footer>
   </div>
 
   <script src="app.js"></script>
