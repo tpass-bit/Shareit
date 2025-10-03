@@ -13,7 +13,13 @@
 <body>
   <div class="container">
     <h1>File Share</h1>
-
+<input type="file" id="fileInput">
+<input type="password" id="uploadPassword" placeholder="Optional password">
+<button onclick="uploadFile()">Upload</button>
+<br>
+<progress id="uploadProgress" max="100" value="0" style="width:250px;"></progress>
+<p id="uploadStatus"></p>
+   
     <section>
       <h2>Upload File</h2>
       <input type="file" id="fileInput"><br>
