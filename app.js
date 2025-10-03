@@ -36,9 +36,10 @@ async function uploadFile() {
   const fileInput = document.getElementById("fileInput");
   const password = document.getElementById("uploadPassword").value;
   const statusEl = document.getElementById("uploadStatus");
+  const progressEl = document.getElementById("uploadProgress");
 
   if (!fileInput.files.length) {
-    statusEl.textContent = "No file selected!";
+    statusEl.textContent = "⚠️ No file selected!";
     return;
   }
 
@@ -48,22 +49,37 @@ async function uploadFile() {
   const expiry = Date.now() + 24 * 60 * 60 * 1000; // 24h expiry
 
   try {
-    // Upload file
     const fileRef = storage.ref().child("uploads/" + id);
-    await fileRef.put(file);
+    const uploadTask = fileRef.put(file);
 
-    // Store metadata in Firestore
-    const passHash = password ? await sha256(password) : "";
-    await db.collection("files").doc(id).set({
-      ownerToken,
-      passwordHash: passHash,
-      originalName: file.name,
-      expiry,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
+    // Track progress
+    uploadTask.on(
+      "state_changed",
+      (snapshot) => {
+        const percent = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        progressEl.value = percent;
+        statusEl.textContent = `Uploading: ${percent.toFixed(1)}%`;
+      },
+      (error) => {
+        statusEl.textContent = "❌ Upload failed: " + error.message;
+      },
+      async () => {
+        // On success
+        const passHash = password ? await sha256(password) : "";
+        await db.collection("files").doc(id).set({
+          ownerToken,
+          passwordHash: passHash,
+          originalName: file.name,
+          expiry,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
 
-    statusEl.textContent = `✅ Uploaded! File ID: ${id}\nOwner Token: ${ownerToken}\nShare link: ${location.origin}?id=${id}`;
+        progressEl.value = 100;
+        statusEl.textContent =
+          `✅ Uploaded!\nFile ID: ${id}\nOwner Token: ${ownerToken}\nShare link: ${location.origin}?id=${id}`;
+      }
+    );
   } catch (e) {
     statusEl.textContent = "❌ Upload failed: " + e.message;
   }
-      }
+}
