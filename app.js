@@ -43,6 +43,18 @@ function showStatus(element, message, type = 'info') {
   }
 }
 
+function updateProgress(percent, progressEl, progressText, statusEl, fileName = '') {
+  progressEl.value = percent;
+  progressText.textContent = `${Math.round(percent)}%`;
+  
+  if (percent < 100) {
+    statusEl.textContent = `Uploading ${fileName}... ${percent.toFixed(1)}%`;
+    statusEl.className = 'status-message info';
+  } else {
+    statusEl.textContent = `Upload complete! Finalizing...`;
+  }
+}
+
 // ---- UPLOAD ----
 async function uploadFile() {
   const fileInput = document.getElementById("fileInput");
@@ -51,6 +63,7 @@ async function uploadFile() {
   const progressEl = document.getElementById("uploadProgress");
   const progressText = document.getElementById("progress-text");
   const progressContainer = document.querySelector('.progress-container');
+  const uploadBtn = document.querySelector('.btn-primary');
 
   if (!fileInput.files.length) {
     showStatus(statusEl, "⚠️ No file selected!", 'error');
@@ -63,11 +76,17 @@ async function uploadFile() {
   const expiry = Date.now() + 24 * 60 * 60 * 1000; // 24h expiry
 
   try {
+    // Disable upload button during upload
+    uploadBtn.disabled = true;
+    uploadBtn.innerHTML = '<i class="icon-cloud-upload"></i> Uploading...';
+    
     // Show progress container
     progressContainer.style.display = 'block';
     progressEl.value = 0;
     progressText.textContent = '0%';
     
+    showStatus(statusEl, `Starting upload: ${file.name} (${formatFileSize(file.size)})`, 'info');
+
     const fileRef = storage.ref().child("uploads/" + id);
     const uploadTask = fileRef.put(file);
 
@@ -75,52 +94,72 @@ async function uploadFile() {
     uploadTask.on(
       "state_changed",
       (snapshot) => {
+        // Progress monitoring
         const percent = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        progressEl.value = percent;
-        progressText.textContent = `${Math.round(percent)}%`;
-        statusEl.textContent = `Uploading: ${percent.toFixed(1)}%`;
+        updateProgress(percent, progressEl, progressText, statusEl, file.name);
+        
+        // Log progress details (for debugging)
+        console.log(`Upload progress: ${percent.toFixed(1)}% - ${snapshot.bytesTransferred}/${snapshot.totalBytes} bytes`);
       },
       (error) => {
+        // Upload failed
         showStatus(statusEl, "❌ Upload failed: " + error.message, 'error');
         progressContainer.style.display = 'none';
+        uploadBtn.disabled = false;
+        uploadBtn.innerHTML = '<i class="icon-cloud-upload"></i> Upload File';
       },
       async () => {
-        // On success - get download URL
-        const downloadURL = await uploadTask.snapshot.ref.getDownloadURL();
-        const passHash = password ? await sha256(password) : "";
+        // Upload completed successfully
+        updateProgress(100, progressEl, progressText, statusEl);
         
-        await db.collection("files").doc(id).set({
-          ownerToken,
-          passwordHash: passHash,
-          originalName: file.name,
-          fileSize: file.size,
-          fileType: file.type,
-          downloadURL: downloadURL,
-          expiry,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
+        try {
+          // Get download URL
+          const downloadURL = await uploadTask.snapshot.ref.getDownloadURL();
+          const passHash = password ? await sha256(password) : "";
+          
+          // Save to Firestore
+          await db.collection("files").doc(id).set({
+            ownerToken,
+            passwordHash: passHash,
+            originalName: file.name,
+            fileSize: file.size,
+            fileType: file.type,
+            downloadURL: downloadURL,
+            expiry,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
 
-        progressEl.value = 100;
-        progressText.textContent = '100%';
-        
-        const shareLink = `${window.location.origin}${window.location.pathname}?id=${id}`;
-        const successMessage = `✅ File uploaded successfully!\n\nFile ID: ${id}\nOwner Token: ${ownerToken}\n\nShare this link:\n${shareLink}`;
-        
-        showStatus(statusEl, successMessage, 'success');
-        
-        // Clear form
-        fileInput.value = '';
-        document.getElementById("uploadPassword").value = '';
-        
-        // Hide progress after delay
-        setTimeout(() => {
-          progressContainer.style.display = 'none';
-        }, 2000);
+          // Success message
+          const shareLink = `${window.location.origin}${window.location.pathname}?id=${id}`;
+          const successMessage = `✅ File uploaded successfully!\n\n📁 File: ${file.name}\n📦 Size: ${formatFileSize(file.size)}\n🔑 File ID: ${id}\n🔐 Owner Token: ${ownerToken}\n\n📤 Share this link:\n${shareLink}`;
+          
+          showStatus(statusEl, successMessage, 'success');
+          
+          // Clear form
+          fileInput.value = '';
+          document.getElementById("uploadPassword").value = '';
+          document.querySelector('.file-input-label span').textContent = 'Choose a file';
+          
+          // Re-enable button and reset progress after delay
+          setTimeout(() => {
+            progressContainer.style.display = 'none';
+            uploadBtn.disabled = false;
+            uploadBtn.innerHTML = '<i class="icon-cloud-upload"></i> Upload File';
+          }, 3000);
+
+        } catch (dbError) {
+          showStatus(statusEl, "❌ File uploaded but database save failed: " + dbError.message, 'error');
+          uploadBtn.disabled = false;
+          uploadBtn.innerHTML = '<i class="icon-cloud-upload"></i> Upload File';
+        }
       }
     );
+
   } catch (e) {
     showStatus(statusEl, "❌ Upload failed: " + e.message, 'error');
     progressContainer.style.display = 'none';
+    uploadBtn.disabled = false;
+    uploadBtn.innerHTML = '<i class="icon-cloud-upload"></i> Upload File';
   }
 }
 
@@ -258,7 +297,7 @@ async function setNewPassword() {
 
 // ---- UTILITY FUNCTIONS ----
 function formatFileSize(bytes) {
-  if (bytes === 0) return '0 Bytes';
+  if (!bytes || bytes === 0) return '0 Bytes';
   const k = 1024;
   const sizes = ['Bytes', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
